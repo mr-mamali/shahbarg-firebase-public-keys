@@ -1,0 +1,25 @@
+name: Mirror signed public keys
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23,53 * * * *'
+permissions:
+  contents: write
+concurrency:
+  group: firebase-public-key-mirror
+  cancel-in-progress: false
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 mirror.py
+      - name: Persist public envelope
+        run: |
+          git config user.name 'Shahbarg Key Mirror'
+          git config user.email 'key-mirror@users.noreply.github.com'
+          git add firebase-signing-keys.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Refresh release-signed Firebase public keys'
+          git push
